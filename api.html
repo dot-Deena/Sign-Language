@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Language Detection</title>
+</head>
+<body>
+    <h1>Sign Language Detection</h1>
+    <video id="video" width="640" height="480" autoplay></video>
+    <button onclick="captureFrame()">Capture Frame</button>
+    <p id="prediction">Prediction will appear here.</p>
+
+    <script>
+        // Access the webcam
+        const video = document.getElementById('video');
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => console.error(err));
+
+        // Capture a frame and send it to the server
+        function captureFrame() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 640;
+            canvas.height = 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('frame', blob, 'frame.jpg');
+
+                fetch('http://127.0.0.1:5000/predict', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('prediction').innerText = `Predicted Sign: ${data.label}`;
+                })
+                .catch(err => console.error(err));
+            }, 'image/jpeg');
+        }
+    </script>
+</body>
+</html>
